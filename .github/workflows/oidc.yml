@@ -16,17 +16,6 @@ jobs:
           RESP=$(curl -sf \
             -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=github")
-          JWT=$(echo "$RESP" | python3 -c "import sys,json; print(json.loads(sys.stdin.read()).get('value',''))")
-          PAYLOAD=$(echo "$JWT" | cut -d. -f2)
-          echo "$PAYLOAD==" | base64 -d 2>/dev/null | python3 -c "
-import sys, json
-try:
-  d = json.loads(sys.stdin.read())
-  print('sub:', d.get('sub'))
-  print('repository:', d.get('repository'))
-  print('job_workflow_ref:', d.get('job_workflow_ref'))
-  print('workflow_ref:', d.get('workflow_ref'))
-  print('runner_environment:', d.get('runner_environment'))
-except Exception as e:
-  print('err:', e)
-"
+          JWT=$(echo "$RESP" | jq -r '.value')
+          echo "--- JWT Claims ---"
+          echo "$JWT" | cut -d. -f2 | base64 -d 2>/dev/null | jq '{sub,repository,job_workflow_ref,workflow_ref,runner_environment}'
